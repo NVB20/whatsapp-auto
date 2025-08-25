@@ -1,6 +1,6 @@
 from datetime import datetime
 
-def get_last_message_dates(message_data):
+def message_formatter(message_data):
     filtered_messages = []  
     search_text = "עלה תרגול"
     
