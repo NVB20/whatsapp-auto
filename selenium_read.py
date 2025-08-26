@@ -104,8 +104,7 @@ def open_whatsapp():
 
 
         print("\nFinished reading messages!")
-        input("Press Enter to close...")
-
+        print(len(message_data) + "messages read")
         return message_data
 
     finally:
