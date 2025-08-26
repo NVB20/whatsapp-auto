@@ -1,8 +1,30 @@
+import os
+import ast
 from datetime import datetime
+from dotenv import load_dotenv
 
 def message_formatter(message_data):
+    # Load .env file
+    load_dotenv()
+    
+    # Get search terms from environment variable
+    search_terms_str = os.getenv("SEARCH_WORD")
+    
+    # Parse the string representation of the list
+    try:
+        if search_terms_str:
+            search_terms = ast.literal_eval(search_terms_str)
+        else:
+            # Fallback to default search terms if env var is not set
+            search_terms = ["עלה תרגול", "העליתי תרגול", "העלתי תרגול"]
+    except (ValueError, SyntaxError):
+        print(f"Error parsing SEARCH_WORD from .env file: {search_terms_str}")
+        # Use default search terms as fallback
+        search_terms = ["עלה תרגול", "העליתי תרגול", "העלתי תרגול"]
+    
+    print(f"Searching for terms: {search_terms}")
+    
     filtered_messages = []  
-    search_text = "עלה תרגול"
     
     for message in message_data:
         sender = message['sender'].strip() 
@@ -12,8 +34,10 @@ def message_formatter(message_data):
         text = message['text']
         timestamp = message['timestamp']
         
-        # Check if the message contains the search text
-        if search_text in text:
+        # Check if the message contains any of the search terms
+        contains_search_term = any(search_term in text for search_term in search_terms)
+        
+        if contains_search_term:
             # Convert timestamp to datetime if it's a string
             if isinstance(timestamp, str):
                 try:
@@ -26,7 +50,6 @@ def message_formatter(message_data):
                     except ValueError:
                         print(f"Could not parse timestamp: {timestamp}")
                         continue
-
                 # Format date as dd/mm/yy
                 formatted_date = timestamp_dt.strftime("%d/%m/%y")
                 
@@ -71,8 +94,8 @@ def message_formatter(message_data):
             'sender': phone_data['sender'],
             'date': phone_data['date']
         })
-
+    
     print(final_filtered_messages)
-    print(f"\nFound {len(final_filtered_messages)} unique phone numbers with messages containing '{search_text}'")
+    print(f"\nFound {len(final_filtered_messages)} unique phone numbers with messages containing any of: {search_terms}")
     
     return final_filtered_messages
