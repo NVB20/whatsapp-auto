@@ -16,6 +16,8 @@ This project uses Selenium WebDriver to monitor a WhatsApp Web group chat for st
   - 🔴 Red: Overdue submission (more than 1 week old)
 - **Date Tracking**: Records exact submission timestamps
 
+  ![Alt text](draw.drawio.png)
+
 ## Prerequisites
 
 - Python 3.7 or higher
