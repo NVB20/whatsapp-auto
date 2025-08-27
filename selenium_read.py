@@ -67,7 +67,7 @@ def open_whatsapp():
             ActionChains(driver).send_keys(Keys.ARROW_DOWN).send_keys(Keys.ENTER).perform()
 
         print(f"Opened group: {group_name}")
-        time.sleep(3)
+        time.sleep(20)
 
         # --- Read last 20 messages ---
         messages = driver.find_elements(By.CSS_SELECTOR, '[data-pre-plain-text]')
@@ -104,7 +104,7 @@ def open_whatsapp():
 
 
         print("\nFinished reading messages!")
-        print(len(message_data) + "messages read")
+        print(f"{len(message_data)} messages read")
         return message_data
 
     finally:
