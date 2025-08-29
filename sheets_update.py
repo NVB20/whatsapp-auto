@@ -19,7 +19,7 @@ def update_sheets(messages):
     print(f"Loaded Sheet ID: {sheet_id}")
 
     sheet = client.open_by_key(sheet_id)
-    worksheet = sheet.sheet1
+    worksheet = sheet.worksheet("main")
 
     all_records = worksheet.get_all_records()
     print("Current sheet records:")
@@ -51,7 +51,6 @@ def update_sheets(messages):
                 
                 # Update if the date is different
                 if current_date != new_date:
-                    # Prepare the update (column E is typically the 5th column for date)
                     updates.append({
                         'range': f'E{i}',
                         'values': [[new_date]]
