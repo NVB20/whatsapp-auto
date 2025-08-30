@@ -7,6 +7,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver import ActionChains
 from selenium.common.exceptions import TimeoutException
 import time
+from dotenv import load_dotenv
+import os
 
 def open_whatsapp():
     chrome_options = Options()
@@ -20,10 +22,12 @@ def open_whatsapp():
         driver.get("https://web.whatsapp.com")
 
         print("Please scan QR code if needed and wait for WhatsApp to load...")
-        time.sleep(30)
+        time.sleep(28)
         print("WhatsApp Web loaded successfully!")
-
-        group_name = "האקדמיה להשקעות - תחילת הדרך"
+        
+        load_dotenv()
+        group_name = os.getenv("GROUP_NAME")
+        print(f"env group name: {group_name}")
 
         # --- Focus the LEFT SIDEBAR search box ---
         search_box = wait.until(EC.element_to_be_clickable(
@@ -77,7 +81,7 @@ def open_whatsapp():
         message_data = []
         for msg in last_20:
             try:
-                # Extract metadata (hidden plain text WhatsApp uses)
+                # Extract metadata 
                 meta = msg.get_attribute("data-pre-plain-text")
                 # Example: "[20:15, 25/08/2025] +972 50-123-4567: "
                 if meta:
@@ -110,3 +114,7 @@ def open_whatsapp():
     finally:
         driver.quit()
         print("Browser closed.")
+
+
+if __name__ == "__main__":
+    open_whatsapp()
