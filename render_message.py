@@ -1,5 +1,7 @@
 from datetime import datetime
 from dotenv import load_dotenv
+import os
+import json
 
 def clean_phone_number(phone):
     """Clean phone number by removing spaces, dashes, and leading plus signs."""
@@ -15,9 +17,20 @@ def message_formatter(message_data):
     # Load .env file
     load_dotenv()
     
-    # Define search terms for each category
-    practice_terms = ["עלה תרגול", "העליתי תרגול", "העלתי תרגול"]
-    message_terms = ["שלחתי הודעה"]
+    # Get search terms from environment variables
+    practice_terms_env = os.getenv("PRACTICE_WORDS")
+    message_terms_env = os.getenv("MESSAGE_WORDS")
+    
+    # Parse the environment variables (assuming they're stored as JSON-like strings)
+    import json
+    try:
+        practice_terms = json.loads(practice_terms_env) if practice_terms_env else ["עלה תרגול", "העליתי תרגול", "העלתי תרגול"]
+        message_terms = json.loads(message_terms_env) if message_terms_env else ["שלחתי הודעה"]
+    except (json.JSONDecodeError, TypeError):
+        # Fallback to default values if parsing fails
+        print("Warning: Could not parse search terms from environment variables, using defaults")
+        practice_terms = ["עלה תרגול", "העליתי תרגול", "העלתי תרגול"]
+        message_terms = ["שלחתי הודעה"]
     
     print(f"Searching for practice terms: {practice_terms}")
     print(f"Searching for message terms: {message_terms}")
