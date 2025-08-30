@@ -1,43 +1,41 @@
-import os
-import ast
 from datetime import datetime
 from dotenv import load_dotenv
 
+def clean_phone_number(phone):
+    """Clean phone number by removing spaces, dashes, and leading plus signs."""
+    cleaned = phone.strip().replace(' ', '').replace('-', '').lstrip('+')
+    return cleaned
+
 def message_formatter(message_data):
+    """
+    Process message data and return categorized messages for sheet updates.
+    Returns dict with 'practice_updates' (for column E) and 'message_updates' (for column H).
+    For each phone number, keeps the most recent message of each type (practice/sent).
+    """
     # Load .env file
     load_dotenv()
     
-    # Get search terms from environment variable
-    search_terms_str = os.getenv("SEARCH_WORD")
+    # Define search terms for each category
+    practice_terms = ["עלה תרגול", "העליתי תרגול", "העלתי תרגול"]
+    message_terms = ["שלחתי הודעה"]
     
-    # Parse the string representation of the list
-    try:
-        if search_terms_str:
-            search_terms = ast.literal_eval(search_terms_str)
-        else:
-            # Fallback to default search terms if env var is not set
-            search_terms = ["עלה תרגול", "העליתי תרגול", "העלתי תרגול"]
-    except (ValueError, SyntaxError):
-        print(f"Error parsing SEARCH_WORD from .env file: {search_terms_str}")
-        # Use default search terms as fallback
-        search_terms = ["עלה תרגול", "העליתי תרגול", "העלתי תרגול"]
+    print(f"Searching for practice terms: {practice_terms}")
+    print(f"Searching for message terms: {message_terms}")
     
-    print(f"Searching for terms: {search_terms}")
-    
-    filtered_messages = []  
+    # Dictionary to store the latest message of each type for each phone number
+    # Structure: {phone_number: {'practice': message_data, 'sent': message_data}}
+    phone_messages = {}
     
     for message in message_data:
-        sender = message['sender'].strip() 
-        sender = sender.replace(' ', '').replace('-', '')
-        sender = sender.lstrip('+')    
-        
+        sender = clean_phone_number(message['sender'])
         text = message['text']
         timestamp = message['timestamp']
         
-        # Check if the message contains any of the search terms
-        contains_search_term = any(search_term in text for search_term in search_terms)
+        # Check message type
+        is_practice_message = any(term in text for term in practice_terms)
+        is_sent_message = any(term in text for term in message_terms)
         
-        if contains_search_term:
+        if is_practice_message or is_sent_message:
             # Convert timestamp to datetime if it's a string
             if isinstance(timestamp, str):
                 try:
@@ -50,52 +48,69 @@ def message_formatter(message_data):
                     except ValueError:
                         print(f"Could not parse timestamp: {timestamp}")
                         continue
-                # Format date as dd/mm/yy
+                        
+                # Format date as dd/mm/yy and time as HH:MM
                 formatted_date = timestamp_dt.strftime("%d/%m/%y")
+                formatted_datetime = timestamp_dt.strftime("%H:%M, %d/%m/%y")
                 
-                # Add to filtered messages
-                filtered_messages.append({
+                message_info = {
                     "sender": sender,
                     "date": formatted_date,
-                })
-    
-    message_lookup = {}
-    for message in filtered_messages:
-        phone = message['sender']
-        date = message['date']
-        
-        # Convert date back to datetime for comparison
-        try:
-            current_date = datetime.strptime(date, "%d/%m/%y")
-            
-            if phone not in message_lookup:
-                message_lookup[phone] = {
-                    'sender': phone,
-                    'date': date,
-                    'datetime': current_date
+                    "datetime": formatted_datetime,
+                    "datetime_obj": timestamp_dt
                 }
-            else:
-                # Keep the more recent date
-                existing_date = message_lookup[phone]['datetime']
-                if current_date > existing_date:
-                    message_lookup[phone] = {
-                        'sender': phone,
-                        'date': date,
-                        'datetime': current_date
-                    }
-        except ValueError:
-            print(f"Error parsing date for comparison: {date}")
-            continue
+                
+                # Initialize phone entry if it doesn't exist
+                if sender not in phone_messages:
+                    phone_messages[sender] = {}
+                
+                # Process practice messages
+                if is_practice_message:
+                    if 'practice' not in phone_messages[sender]:
+                        phone_messages[sender]['practice'] = message_info
+                    else:
+                        # Keep the more recent practice message
+                        existing_dt = phone_messages[sender]['practice']['datetime_obj']
+                        if timestamp_dt > existing_dt:
+                            phone_messages[sender]['practice'] = message_info
+                
+                # Process sent messages
+                if is_sent_message:
+                    if 'sent' not in phone_messages[sender]:
+                        phone_messages[sender]['sent'] = message_info
+                    else:
+                        # Keep the more recent sent message
+                        existing_dt = phone_messages[sender]['sent']['datetime_obj']
+                        if timestamp_dt > existing_dt:
+                            phone_messages[sender]['sent'] = message_info
     
-    # Convert back to list format (without datetime field)
-    final_filtered_messages = []
-    for phone_data in message_lookup.values():
-        final_filtered_messages.append({
-            'sender': phone_data['sender'],
-            'date': phone_data['date']
-        })
+    # Extract practice and message updates
+    practice_updates = []
+    message_updates = []
     
-    print(final_filtered_messages)
-    print(f"\nFound {len(final_filtered_messages)} unique phone numbers with messages containing any of: {search_terms}")
+    for phone, messages in phone_messages.items():
+        if 'practice' in messages:
+            msg_data = messages['practice']
+            practice_updates.append({
+                'sender': msg_data['sender'],
+                'date': msg_data['date'],
+                'datetime': msg_data['datetime']
+            })
+        
+        if 'sent' in messages:
+            msg_data = messages['sent']
+            message_updates.append({
+                'sender': msg_data['sender'],
+                'date': msg_data['date'],
+                'datetime': msg_data['datetime']
+            })
     
-    return final_filtered_messages
+    print(f"\nPractice updates: {practice_updates}")
+    print(f"Message updates: {message_updates}")
+    print(f"\nFound {len(practice_updates)} unique phone numbers for practice updates")
+    print(f"Found {len(message_updates)} unique phone numbers for message updates")
+    
+    return {
+        'practice_updates': practice_updates,
+        'message_updates': message_updates
+    }
