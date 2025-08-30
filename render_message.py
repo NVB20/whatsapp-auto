@@ -1,7 +1,6 @@
 from datetime import datetime
 from dotenv import load_dotenv
 import os
-import json
 
 def clean_phone_number(phone):
     """Clean phone number by removing spaces, dashes, and leading plus signs."""
