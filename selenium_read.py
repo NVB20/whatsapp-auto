@@ -114,7 +114,3 @@ def open_whatsapp():
     finally:
         driver.quit()
         print("Browser closed.")
-
-
-if __name__ == "__main__":
-    open_whatsapp()
