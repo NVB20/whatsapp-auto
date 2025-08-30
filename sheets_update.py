@@ -2,6 +2,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import os
 from dotenv import load_dotenv
+import re
 
 def update_sheets(message_data):
     """
@@ -14,7 +15,7 @@ def update_sheets(message_data):
     Also updates:
     - Column D: last practice date (date only format)
     - Column G: message_update counter (increments when F is updated with newer data)
-    - Column H: practice_update counter (increments when I is updated with newer data)
+    - Class counters: columns J-AA (שיעור 1-18) based on class number in column B
     """
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
 
@@ -56,6 +57,7 @@ def update_sheets(message_data):
     updates = []
     practice_updated = 0
     message_updated = 0
+    class_counters_updated = 0
     
     # Debug: Print what we're looking for
     print("\n=== DEBUGGING INFO ===")
@@ -74,6 +76,31 @@ def update_sheets(message_data):
             print(f"  Row {i}: '{sheet_phone}'")
     print("======================\n")
     
+    def get_class_column_from_number(class_number):
+        """
+        Convert class number to corresponding column letter.
+        שיעור 1 = Column J (10), שיעור 2 = Column K (11), ..., שיעור 18 = Column AA (27)
+        """
+        if 1 <= class_number <= 18:
+            column_index = 9 + class_number  # J=10, so שיעור 1 = 9+1=10
+            if column_index <= 26:
+                return chr(ord('A') + column_index - 1)  # A=1, B=2, ..., Z=26
+            else:
+                # For columns beyond Z (AA, AB, etc.)
+                first_letter = chr(ord('A') + (column_index - 27) // 26)
+                second_letter = chr(ord('A') + (column_index - 1) % 26)
+                return first_letter + second_letter
+        return None
+    
+    def extract_class_number(class_text):
+        """Extract class number from text like 'שיעור 12'"""
+        if not class_text:
+            return None
+        match = re.search(r'שיעור\s*(\d+)', str(class_text))
+        if match:
+            return int(match.group(1))
+        return None
+    
     # Process each row in the spreadsheet
     for i, record in enumerate(all_records, start=2):  # start=2 because row 1 is headers
         sheet_phone = record.get('phone number', '')
@@ -83,6 +110,13 @@ def update_sheets(message_data):
             cleaned_sheet_phone = sheet_phone.replace(' ', '').replace('-', '').lstrip('+')
             
             print(f"Row {i}:")
+            
+            # Get class information from column B
+            class_text = worksheet.cell(i, 2).value or ''  # Column B = 2
+            class_number = extract_class_number(class_text)
+            
+            if class_number:
+                print(f"  Class info: '{class_text}' -> Class number: {class_number}")
             
             # Check for practice updates (column I for datetime, column H for counter)
             if cleaned_sheet_phone in practice_lookup:
@@ -108,24 +142,35 @@ def update_sheets(message_data):
                         'values': [[new_date]]
                     })
                     
-                    # Get current counter value from column H and increment it
-                    current_practice_counter_value = worksheet.cell(i, 8).value or 0  # Column H = 8
-                    try:
-                        current_practice_counter = int(current_practice_counter_value) if current_practice_counter_value != '' and current_practice_counter_value is not None else 0
-                    except (ValueError, TypeError):
-                        current_practice_counter = 0
-                    
-                    new_practice_counter = current_practice_counter + 1
-                    
-                    # Update the counter in column H
-                    updates.append({
-                        'range': f'H{i}',
-                        'values': [[new_practice_counter]]
-                    })
+                    # Update class counter if class number is valid
+                    if class_number:
+                        class_column = get_class_column_from_number(class_number)
+                        if class_column:
+                            # Convert column letter back to number for cell access
+                            if len(class_column) == 1:
+                                class_col_num = ord(class_column) - ord('A') + 1
+                            else:  # AA, AB, etc.
+                                class_col_num = (ord(class_column[0]) - ord('A') + 1) * 26 + (ord(class_column[1]) - ord('A') + 1)
+                            
+                            current_class_counter_value = worksheet.cell(i, class_col_num).value or 0
+                            try:
+                                current_class_counter = int(current_class_counter_value) if current_class_counter_value != '' and current_class_counter_value is not None else 0
+                            except (ValueError, TypeError):
+                                current_class_counter = 0
+                            
+                            new_class_counter = current_class_counter + 1
+                            
+                            # Update the class counter
+                            updates.append({
+                                'range': f'{class_column}{i}',
+                                'values': [[new_class_counter]]
+                            })
+                            
+                            print(f"  ✅ INCREMENTING class {class_number} counter for {cleaned_sheet_phone} from {current_class_counter} to {new_class_counter} (Column {class_column})")
+                            class_counters_updated += 1
                     
                     print(f"  ✅ UPDATING practice datetime for {cleaned_sheet_phone} from '{current_practice_datetime}' to '{new_datetime}' (Column I)")
                     print(f"  ✅ UPDATING last practice date for {cleaned_sheet_phone} to '{new_date}' (Column D)")
-                    print(f"  ✅ INCREMENTING practice counter for {cleaned_sheet_phone} from {current_practice_counter} to {new_practice_counter} (Column H)")
                     practice_updated += 1
                 else:
                     print(f"  ➖ {cleaned_sheet_phone} already has current practice datetime '{current_practice_datetime}' (Column I)")
@@ -134,9 +179,6 @@ def update_sheets(message_data):
             if cleaned_sheet_phone in message_lookup:
                 new_date = message_lookup[cleaned_sheet_phone]['date']
                 new_datetime = message_lookup[cleaned_sheet_phone]['datetime']
-                
-                # First, let's see what column headers are available for this row
-                print(f"  Available columns for row {i}: {list(record.keys())}")
                 
                 # Get current message datetime from column F
                 current_message_datetime = worksheet.cell(i, 6).value or ''  # Column F = 6
@@ -181,8 +223,9 @@ def update_sheets(message_data):
         try:
             worksheet.batch_update(updates, value_input_option='USER_ENTERED')
             print(f"\n✅ Successfully updated {total_updated} rows!")
-            print(f"   - Practice updates (Column D + I + Counter H): {practice_updated}")
+            print(f"   - Practice updates (Column D + I): {practice_updated}")
             print(f"   - Message updates (Column F + Counter G): {message_updated}")
+            print(f"   - Class counters updated: {class_counters_updated}")
             print(f"   - Total batch operations: {len(updates)}")
             
         except Exception as e:
