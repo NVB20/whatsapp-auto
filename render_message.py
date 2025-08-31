@@ -1,11 +1,29 @@
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import re
 
 def clean_phone_number(phone):
-    """Clean phone number by removing spaces, dashes, and leading plus signs."""
-    cleaned = phone.strip().replace(' ', '').replace('-', '').lstrip('+')
-    return cleaned
+    """Clean phone number by removing spaces, dashes, and leading plus signs, then normalize to Israeli format."""
+    # Remove all non-digit characters
+    cleaned = re.sub(r'[^\d]', '', phone.strip())
+    
+    # Handle different Israeli phone number formats
+    if cleaned.startswith('972'):
+        # Already in international format (972XXXXXXXXX)
+        return cleaned
+    elif cleaned.startswith('0'):
+        # Israeli domestic format (0XXXXXXXXX) - remove leading 0 and add 972
+        return '972' + cleaned[1:]
+    elif len(cleaned) == 9:
+        # 9-digit number without country code or leading 0 - add 972
+        return '972' + cleaned
+    elif len(cleaned) == 10 and not cleaned.startswith('972'):
+        # 10-digit number starting with area code - add 972
+        return '972' + cleaned
+    else:
+        # Return as-is if format is unclear
+        return cleaned
 
 def message_formatter(message_data):
     """
@@ -42,6 +60,8 @@ def message_formatter(message_data):
         sender = clean_phone_number(message['sender'])
         text = message['text']
         timestamp = message['timestamp']
+        
+        print(f"Processing phone: {message['sender']} -> normalized: {sender}")
         
         # Check message type
         is_practice_message = any(term in text for term in practice_terms)
