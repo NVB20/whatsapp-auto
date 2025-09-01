@@ -5,6 +5,7 @@ import re
 
 def clean_phone_number(phone):
     """Clean phone number by removing spaces, dashes, and leading plus signs, then normalize to Israeli format."""
+
     # Remove all non-digit characters
     cleaned = re.sub(r'[^\d]', '', phone.strip())
     
@@ -31,6 +32,7 @@ def message_formatter(message_data):
     Returns dict with 'practice_updates' (for column E) and 'message_updates' (for column H).
     For each phone number, keeps the most recent message of each type (practice/sent).
     """
+
     # Load .env file
     load_dotenv()
     
@@ -71,11 +73,9 @@ def message_formatter(message_data):
             # Convert timestamp to datetime if it's a string
             if isinstance(timestamp, str):
                 try:
-                    # Format: "22:06, 8/24/2025"
                     timestamp_dt = datetime.strptime(timestamp, "%H:%M, %m/%d/%Y")
                 except ValueError:
                     try:
-                        # Alternative format: "22:06, 24/8/2025"
                         timestamp_dt = datetime.strptime(timestamp, "%H:%M, %d/%m/%Y")
                     except ValueError:
                         print(f"Could not parse timestamp: {timestamp}")
