@@ -116,7 +116,6 @@ def message_formatter(message_data):
                         if timestamp_dt > existing_dt:
                             phone_messages[sender]['sent'] = message_info
     
-    # Extract practice and message updates
     practice_updates = []
     message_updates = []
     
