@@ -44,4 +44,4 @@ def download_data_to_folder():
 
         print(f"✅ Saved {file_path}")
 
-    print(f"🎉 All sheets downloaded successfully to '{output_folder}'")
+    print(f"All sheets downloaded successfully to '{output_folder}'")
