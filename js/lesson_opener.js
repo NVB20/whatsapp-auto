@@ -14,7 +14,7 @@ function advanceStudentLesson() {
     // In students sheet: Column B has names
     studentName = activeSheet.getRange(currentRow, 2).getValue();
   } else {
-    SpreadsheetApp.getUi().alert('Please run this script from "main"');
+    SpreadsheetApp.getUi().alert('Please run this script from either "main" or "students" sheet');
     return;
   }
   
@@ -26,6 +26,10 @@ function advanceStudentLesson() {
   
   // Get students sheet data
   const studentsSheet = spreadsheet.getSheetByName('students');
+  if (!studentsSheet) {
+    SpreadsheetApp.getUi().alert('Students sheet not found');
+    return;
+  }
   
   // Find student in students sheet
   const studentsData = studentsSheet.getDataRange().getValues();
@@ -57,15 +61,16 @@ function advanceStudentLesson() {
     return;
   }
   
-  // Better lesson number parsing with multiple patterns
-  let currentLessonNumber = -1;
+  // FIXED: Better lesson number parsing with multiple patterns
+  let currentLessonNumber = 0;
   const currentLessonStr = currentLesson.toString().trim();
   
-// Try patterns
-const patterns = [
-  /שיעור\s*(\d+)/,       // שיעור 5
-  /^(\d+)$/,             // plain number
-];
+  // Try different patterns for lesson parsing
+  const patterns = [
+    /שיעור\s*(\d+)/,           // "שיעור 5" or "שיעור5"
+    /lesson\s*(\d+)/i,         // "Lesson 5" (case insensitive)
+    /(\d+)/                    // Just a number
+  ];
   
   let lessonMatch = null;
   for (const pattern of patterns) {
@@ -76,15 +81,14 @@ const patterns = [
     }
   }
   
-// allow zero as valid; only reject negative numbers / NaN
-if (lessonMatch === null || isNaN(currentLessonNumber) || currentLessonNumber < 0) {
-  SpreadsheetApp.getUi().alert(
-    `Cannot parse lesson number from "${currentLesson}".\n` +
-    `Expected "שיעור X" or a number (X can be 0 or higher).\n` +
-    `Normalized value: "${currentLessonStr}"`
-  );
-  return;
-}
+  if (!lessonMatch || currentLessonNumber <= 0) {
+    SpreadsheetApp.getUi().alert(
+      `Cannot parse lesson number from "${currentLesson}". ` +
+      `Expected format: "שיעור X" where X is a positive number. ` +
+      `Current value: "${currentLessonStr}"`
+    );
+    return;
+  }
   
   const nextLessonNumber = currentLessonNumber + 1;
   const nextLessonPrefix = `שיעור ${nextLessonNumber}`;
@@ -117,6 +121,8 @@ if (lessonMatch === null || isNaN(currentLessonNumber) || currentLessonNumber < 
       // FIXED: More flexible folder matching
       if (folderName.includes(`שיעור ${nextLessonNumber}`) || 
           folderName.includes(`שיעור${nextLessonNumber}`) ||
+          folderName.includes(`Lesson ${nextLessonNumber}`) ||
+          folderName.includes(`lesson${nextLessonNumber}`) ||
           folderName.startsWith(`${nextLessonNumber} `) ||
           folderName === nextLessonNumber.toString()) {
         nextLessonFolder = folder;

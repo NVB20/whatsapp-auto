@@ -33,7 +33,11 @@ def update_sheets(message_data):
 
     sheet = client.open_by_key(sheet_id)
     worksheet = sheet.worksheet("main")
-    all_records = worksheet.get_all_records()
+    
+    # Fetch all data at once to avoid API rate limits
+    all_data = worksheet.get_all_values()
+    headers = all_data[0] if all_data else []
+    all_records = all_data[1:] if len(all_data) > 1 else []
 
     
     # Create lookup dictionaries from the messages
@@ -69,9 +73,26 @@ def update_sheets(message_data):
     for phone in message_lookup.keys():
         print(f"  '{phone}'")
     
+    # Helper function to get column index from header name
+    def get_column_index(header_name):
+        """Get column index (0-based) from header name"""
+        try:
+            return headers.index(header_name)
+        except ValueError:
+            return None
+    
+    # Get column indices
+    phone_col = get_column_index('phone number')
+    class_col = 1  # Column B = index 1
+    practice_datetime_col = 8  # Column I = index 8
+    last_practice_date_col = 3  # Column D = index 3
+    message_datetime_col = 5  # Column F = index 5
+    message_counter_col = 6  # Column G = index 6
+    
     print(f"\nSpreadsheet phone numbers:")
-    for i, record in enumerate(all_records, start=2):
-        sheet_phone = record.get('phone number', '')
+    for i, row in enumerate(all_records, start=2):
+        # Get phone number from the identified column
+        sheet_phone = row[phone_col] if phone_col is not None and len(row) > phone_col else ''
         if sheet_phone:
             print(f"  Row {i}: '{sheet_phone}'")
     print("======================\n")
@@ -102,8 +123,9 @@ def update_sheets(message_data):
         return None
     
     # Process each row in the spreadsheet
-    for i, record in enumerate(all_records, start=2):  # start=2 because row 1 is headers
-        sheet_phone = record.get('phone number', '')
+    for i, row in enumerate(all_records, start=2):  # start=2 because row 1 is headers
+        # Safely get phone number
+        sheet_phone = row[phone_col] if phone_col is not None and len(row) > phone_col else ''
         
         if sheet_phone:  # Only process rows with phone numbers
             # Clean the sheet phone number to match our lookup format
@@ -111,20 +133,20 @@ def update_sheets(message_data):
             
             print(f"Row {i}:")
             
-            # Get class information from column B
-            class_text = worksheet.cell(i, 2).value or ''  # Column B = 2
+            # Get class information from column B (index 1)
+            class_text = row[class_col] if len(row) > class_col else ''
             class_number = extract_class_number(class_text)
             
             if class_number:
                 print(f"  Class info: '{class_text}' -> Class number: {class_number}")
             
-            # Check for practice updates (column I for datetime, column H for counter)
+            # Check for practice updates (column I for datetime, column D for date)
             if cleaned_sheet_phone in practice_lookup:
                 new_date = practice_lookup[cleaned_sheet_phone]['date']
                 new_datetime = practice_lookup[cleaned_sheet_phone]['datetime']
                 
-                # Get current practice datetime from column I
-                current_practice_datetime = worksheet.cell(i, 9).value or ''  # Column I = 9
+                # Get current practice datetime from column I (index 8)
+                current_practice_datetime = row[practice_datetime_col] if len(row) > practice_datetime_col else ''
                 
                 print(f"  Found practice match! Current practice datetime: '{current_practice_datetime}' -> New: '{new_datetime}'")
                 
@@ -152,7 +174,9 @@ def update_sheets(message_data):
                             else:  # AA, AB, etc.
                                 class_col_num = (ord(class_column[0]) - ord('A') + 1) * 26 + (ord(class_column[1]) - ord('A') + 1)
                             
-                            current_class_counter_value = worksheet.cell(i, class_col_num).value or 0
+                            # Get current class counter value from row data
+                            class_col_index = class_col_num - 1  # Convert to 0-based index
+                            current_class_counter_value = row[class_col_index] if len(row) > class_col_index else 0
                             try:
                                 current_class_counter = int(current_class_counter_value) if current_class_counter_value != '' and current_class_counter_value is not None else 0
                             except (ValueError, TypeError):
@@ -180,8 +204,8 @@ def update_sheets(message_data):
                 new_date = message_lookup[cleaned_sheet_phone]['date']
                 new_datetime = message_lookup[cleaned_sheet_phone]['datetime']
                 
-                # Get current message datetime from column F
-                current_message_datetime = worksheet.cell(i, 6).value or ''  # Column F = 6
+                # Get current message datetime from column F (index 5)
+                current_message_datetime = row[message_datetime_col] if len(row) > message_datetime_col else ''
                 
                 print(f"  Found message match! Current message datetime: '{current_message_datetime}' -> New: '{new_datetime}'")
                 
@@ -193,8 +217,8 @@ def update_sheets(message_data):
                         'values': [[new_datetime]]
                     })
                     
-                    # Get current counter value from column G and increment it
-                    current_message_counter_value = worksheet.cell(i, 7).value or 0  # Column G = 7
+                    # Get current counter value from column G (index 6) and increment it
+                    current_message_counter_value = row[message_counter_col] if len(row) > message_counter_col else 0
                     try:
                         current_message_counter = int(current_message_counter_value) if current_message_counter_value != '' and current_message_counter_value is not None else 0
                     except (ValueError, TypeError):
