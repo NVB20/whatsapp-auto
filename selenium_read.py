@@ -22,7 +22,7 @@ def open_whatsapp():
         driver.get("https://web.whatsapp.com")
 
         print("Please scan QR code if needed and wait for WhatsApp to load...")
-        time.sleep(28)
+        time.sleep(10)
         print("WhatsApp Web loaded successfully!")
         
         load_dotenv()
@@ -37,7 +37,6 @@ def open_whatsapp():
         search_box.send_keys(Keys.CONTROL, 'a')
         search_box.send_keys(Keys.BACK_SPACE)
         search_box.send_keys(group_name)
-        time.sleep(1.2)
 
         # --- Select the first search result ---
         first_result = None
