@@ -25,6 +25,3 @@ def last_time_updated():
     current_datetime = datetime.now().strftime("%d-%m %H:%M")
     worksheet.update_acell('C9', f"'{current_datetime}")
     print(f"Updated cell C9 with: {current_datetime}")
-
-if __name__ == "__main__":
-    last_time_updated()
