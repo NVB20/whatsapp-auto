@@ -22,14 +22,16 @@ It also logs every step and creates a CSV backup for safekeeping.
 
 ---
 
-## 🛠️ Setup & Installation
+  ![Alt text](draw.drawio.png)
+
+---
 
 1. **Clone the repository**
    ```bash
    git clone https://github.com/NVB20/whatsapp-auto.git
    cd whatsapp-auto
 
-  ![Alt text](draw.drawio.png)
+
 
 ## Prerequisites
 
