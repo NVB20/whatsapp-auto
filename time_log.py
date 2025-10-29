@@ -64,11 +64,14 @@ def table_log(runtimes, total_elapsed):
     logging.info("-" * 50)
     logging.info("=" * 70 + "\n")
 
-def no_messages(total_elapsed):
-    logging.info("\n" + "-" * 50)
-    logging.info("the selenium didnt succeed to read any messages")
-    logging.info(f"TOTAL RUNTIME: {total_elapsed:.2f}s")
-    logging.info("-" * 50)
+def no_messages(total_elapsed: float):
+    """Logs a clear, well-formatted message when no messages were found."""
+    logging.info("\n" + "=" * 70)
+    logging.info("📭 No messages were processed.")
+    logging.info("⚠️  The Selenium process did not retrieve any messages from WhatsApp.")
+    logging.info(f"🕒 Total runtime: {total_elapsed:.2f} seconds")
+    logging.info("-" * 70)
+    logging.info("🛑 Script ended early — no messages to process.")
     logging.info("=" * 70 + "\n")
 
 
