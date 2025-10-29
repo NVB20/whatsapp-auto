@@ -1,20 +1,33 @@
-# WhatsApp Assignment Tracker
+# WhatsApp Auto
 
-An automated system that monitors WhatsApp group messages for student assignment submissions and tracks them in Google Sheets with visual status indicators.
+An automation tool that connects **WhatsApp Web** with **Google Sheets** using Python and Selenium.
 
-## Overview
+---
 
-This project uses Selenium WebDriver to monitor a WhatsApp Web group chat for student assignment submissions. When a student sends a message indicating they've submitted their assignment, the system automatically updates a Google Sheets document with the submission date and applies color-coded status indicators.
+## 🚀 Overview
 
-## Features
+**WhatsApp Auto** automatically reads incoming messages from WhatsApp Web, processes them, and updates a connected Google Sheet — saving you time and keeping your data synchronized.  
+It also logs every step and creates a CSV backup for safekeeping.
 
-- **Real-time WhatsApp Monitoring**: Continuously tracks messages in a specified WhatsApp group
-- **Assignment Detection**: Filters messages to identify assignment submissions
-- **Google Sheets Integration**: Automatically updates spreadsheet with submission dates
-- **Visual Status System**: 
-  - 🟢 Green: Recent submission (within 1 week)
-  - 🔴 Red: Overdue submission (more than 1 week old)
-- **Date Tracking**: Records exact submission timestamps
+---
+
+## ✨ Features
+
+- 📥 Reads and extracts WhatsApp messages via Selenium  
+- 🧹 Formats and filters message data  
+- 📊 Updates Google Sheets automatically  
+- 💾 Saves a CSV backup of all message data  
+- 🕒 Logs each module’s runtime and overall script duration  
+- 🧭 Gracefully exits when no new messages are found  
+
+---
+
+## 🛠️ Setup & Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/NVB20/whatsapp-auto.git
+   cd whatsapp-auto
 
   ![Alt text](draw.drawio.png)
 
@@ -41,17 +54,6 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
-
-## How It Works
-
-1. **Message Monitoring**: Selenium WebDriver connects to WhatsApp Web and  read the specified group chat messages
-2. **Message Filtering**: Each new message is analyzed for submission keywords 
-3. **Student Identification**: The system identifies which student sent the submission message based on his phone number
-4. **Sheet Updates**: Google Sheets API updates the corresponding row with:
-   - Current date/time
-   - Green background color for the status cell
-5. **Status Checking**: Periodically reviews all submissions and marks entries red if older than one week
-
 
 ## Contributing
 
