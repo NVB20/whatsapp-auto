@@ -63,3 +63,12 @@ def table_log(runtimes, total_elapsed):
     logging.info(f"TOTAL RUNTIME: {total_elapsed:.2f}s")
     logging.info("-" * 50)
     logging.info("=" * 70 + "\n")
+
+def no_messages(total_elapsed):
+    logging.info("\n" + "-" * 50)
+    logging.info("the selenium didnt succeed to read any messages")
+    logging.info(f"TOTAL RUNTIME: {total_elapsed:.2f}s")
+    logging.info("-" * 50)
+    logging.info("=" * 70 + "\n")
+
+
