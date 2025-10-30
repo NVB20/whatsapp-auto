@@ -72,7 +72,8 @@ def update_sheets_data(message_data):
     def get_class_column_from_number(class_number):
         """Convert class number to corresponding column letter."""
         if 1 <= class_number <= 18:
-            column_index = 9 + class_number  # J=10, so שיעור 1 = 9+1=10
+            # Column H is index 8 (0-based), so שיעור 1 = 7 + 1 = 8
+            column_index = 7 + class_number
             if column_index <= 26:
                 return chr(ord('A') + column_index - 1)
             else:
