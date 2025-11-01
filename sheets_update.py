@@ -206,7 +206,7 @@ def update_sheets_data(message_data):
                     # Mark this phone for class counter update
                     phones_with_newer_practice[cleaned_sheet_phone] = True
                 else:
-                    print(f"  ⏭️ New practice date is NOT newer. Skipping update.")
+                    print(f"New practice date is NOT newer. Skipping update.")
 
             # Check for message updates 
             if cleaned_sheet_phone in message_lookup:
@@ -278,7 +278,7 @@ def update_sheets_data(message_data):
                     print(f"  ✅ Row {i}: Incrementing class {class_number} counter from {current_class_counter} to {new_class_counter} (Column {class_column})")
                     class_counters_updated += 1
             elif cleaned_sheet_phone in practice_lookup and class_number:
-                print(f"  ⏭️ Row {i}: Skipping class {class_number} counter - practice date is not newer")
+                print(f"Row {i}: Skipping class {class_number} counter - practice date is not newer")
 
     # Execute all updates in batches
     if updates:
