@@ -26,7 +26,7 @@ def download_data_to_folder():
     output_folder = os.path.join(BASE_FOLDER, timestamp)
     os.makedirs(output_folder, exist_ok=True)
 
-    print(f"📁 Saving CSV files to: {output_folder}")
+    print(f"Saving CSV files to: {output_folder}")
 
     # === DOWNLOAD EACH TAB ===
     for worksheet in spreadsheet.worksheets():
@@ -42,6 +42,6 @@ def download_data_to_folder():
             writer = csv.writer(f)
             writer.writerows(rows)
 
-        print(f"✅ Saved {file_path}")
+        print(f"Saved {file_path}")
 
     print(f"All sheets downloaded successfully to '{output_folder}'")
