@@ -1,6 +1,8 @@
 import time
 import logging
 import os
+import sys
+import pytest
 from dotenv import load_dotenv
 
 from selenium_read import open_whatsapp
@@ -20,6 +22,18 @@ setup_handler()
 
 
 if __name__ == "__main__":
+    # Check for test flags
+    if "--test" in sys.argv or "--test-unit" in sys.argv:
+        # Run unit tests
+        exit_code = pytest.main([
+            "tests/unit/test_sheets_last_time_update.py",
+            "tests/unit/test_sheets_update.py",
+            "-v",  # verbose
+            "-s",  # show print statements
+        ])
+        sys.exit(exit_code)
+    
+    # Normal execution starts here
     total_start = time.time()
     logging.info("\n" + "=" * 70)
     logging.info("Script started.")
