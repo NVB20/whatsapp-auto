@@ -35,28 +35,28 @@ def setup_handler():
         handlers=[handler, console]
     )
 
-    logging.info(f"🗂️ Log file initialized at: {LOG_FILE}")
+    logging.info(f"Log file initialized at: {LOG_FILE}")
 
 
 def timed(label, func, *args, **kwargs):
     """Run a function, log its runtime, and return the result."""
     start = time.time()
-    logging.info(f"▶️ Starting {label}...")
+    logging.info(f"▶Starting {label}...")
     try:
         result = func(*args, **kwargs)
         elapsed = time.time() - start
-        logging.info(f"✅ {label} completed in {elapsed:.2f}s")
+        logging.info(f"{label} completed in {elapsed:.2f}s")
         return elapsed, result
     except Exception as e:
         elapsed = time.time() - start
-        logging.error(f"❌ {label} failed after {elapsed:.2f}s: {e}", exc_info=True)
+        logging.error(f"{label} failed after {elapsed:.2f}s: {e}", exc_info=True)
         raise
 
 
 def table_log(runtimes, total_elapsed):
     # === Summary Table ===
     logging.info("\n" + "-" * 50)
-    logging.info("🏁 SUMMARY OF TASK RUNTIMES")
+    logging.info("SUMMARY OF TASK RUNTIMES")
     for name, t in runtimes.items():
         logging.info(f" - {name:<25} {t:>6.2f}s")
     logging.info("-" * 50)
@@ -67,11 +67,9 @@ def table_log(runtimes, total_elapsed):
 def no_messages(total_elapsed: float):
     """Logs a clear, well-formatted message when no messages were found."""
     logging.info("\n" + "=" * 70)
-    logging.info("📭 No messages were processed.")
-    logging.info("⚠️  The Selenium process did not retrieve any messages from WhatsApp.")
-    logging.info(f"🕒 Total runtime: {total_elapsed:.2f} seconds")
+    logging.info("No messages were processed.")
+    logging.info("The Selenium process did not retrieve any messages from WhatsApp.")
+    logging.info(f"Total runtime: {total_elapsed:.2f} seconds")
     logging.info("-" * 70)
-    logging.info("🛑 Script ended early — no messages to process.")
+    logging.info("Script ended early — no messages to process.")
     logging.info("=" * 70 + "\n")
-
-

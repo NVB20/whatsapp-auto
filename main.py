@@ -22,7 +22,7 @@ setup_handler()
 if __name__ == "__main__":
     total_start = time.time()
     logging.info("\n" + "=" * 70)
-    logging.info("🚀 Script started.")
+    logging.info("Script started.")
 
     runtimes = {}
 
