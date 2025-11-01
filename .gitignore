@@ -5,3 +5,4 @@ __pycache__
 .env
 stuf
 js
+.pytest_cache
