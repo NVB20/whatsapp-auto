@@ -3,6 +3,7 @@ from google.oauth2.service_account import Credentials
 import os
 from dotenv import load_dotenv
 import re
+from datetime import datetime
 
 def update_sheets_data(message_data):
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
@@ -43,6 +44,58 @@ def update_sheets_data(message_data):
         cleaned = cleaned.strip()
         cleaned = cleaned.strip("'\"")
         return cleaned
+
+    # Helper function to compare dates
+    def is_date_newer(new_date_str, old_date_str):
+        """
+        Compare two date strings and return True if new_date is newer than old_date.
+        Handles various date formats.
+        """
+        if not old_date_str or old_date_str.strip() == '':
+            # If no old date exists, consider new date as newer
+            return True
+        
+        if not new_date_str or new_date_str.strip() == '':
+            return False
+        
+        try:
+            # Try common date formats
+            date_formats = [
+                '%Y-%m-%d %H:%M:%S',
+                '%Y-%m-%d',
+                '%d/%m/%Y %H:%M:%S',
+                '%d/%m/%Y',
+                '%m/%d/%Y %H:%M:%S',
+                '%m/%d/%Y',
+            ]
+            
+            new_date = None
+            old_date = None
+            
+            for fmt in date_formats:
+                try:
+                    new_date = datetime.strptime(new_date_str.strip(), fmt)
+                    break
+                except ValueError:
+                    continue
+            
+            for fmt in date_formats:
+                try:
+                    old_date = datetime.strptime(old_date_str.strip(), fmt)
+                    break
+                except ValueError:
+                    continue
+            
+            if new_date and old_date:
+                return new_date > old_date
+            
+            # If parsing fails, fall back to string comparison
+            return new_date_str > old_date_str
+            
+        except Exception as e:
+            print(f"  ⚠️ Date comparison error: {e}")
+            # If comparison fails, don't update to be safe
+            return False
 
     # Create lookup dictionaries from the messages with cleaned values
     practice_lookup = {}
@@ -104,6 +157,9 @@ def update_sheets_data(message_data):
     updates = []
     main_updates = []
     class_counters_updated = 0
+    
+    # Dictionary to track which phones should update class counters
+    phones_with_newer_practice = {}
 
     print(f"\nSpreadsheet phone numbers:")
     for i, row in enumerate(all_records, start=2):
@@ -127,20 +183,30 @@ def update_sheets_data(message_data):
                 new_datetime = practice_lookup[cleaned_sheet_phone]['datetime']
                 
                 current_practice_datetime = row[practice_datetime_col] if len(row) > practice_datetime_col else ''
+                current_practice_date = row[practice_date_col] if len(row) > practice_date_col else ''
                 
-                print(f"  Found practice match! Current practice datetime: '{current_practice_datetime}' -> New: '{new_datetime}'")
+                print(f"  Found practice match! Current: '{current_practice_datetime}' -> New: '{new_datetime}'")
 
-                # Update datetime if different
-                if current_practice_datetime != new_datetime:
-                    updates.append({
-                        'range': f'D{i}',
-                        'values': [[new_datetime]]
-                    })
+                # Check if new date is newer than current date
+                if is_date_newer(new_datetime, current_practice_datetime):
+                    print(f"  ✅ New practice date is newer! Will update data sheet and class counter.")
                     
-                    updates.append({
-                        'range': f'E{i}',
-                        'values': [[new_date]]
-                    })    
+                    # Update datetime if different
+                    if current_practice_datetime != new_datetime:
+                        updates.append({
+                            'range': f'D{i}',
+                            'values': [[new_datetime]]
+                        })
+                        
+                        updates.append({
+                            'range': f'E{i}',
+                            'values': [[new_date]]
+                        })
+                    
+                    # Mark this phone for class counter update
+                    phones_with_newer_practice[cleaned_sheet_phone] = True
+                else:
+                    print(f"  ⏭️ New practice date is NOT newer. Skipping update.")
 
             # Check for message updates 
             if cleaned_sheet_phone in message_lookup:
@@ -185,8 +251,8 @@ def update_sheets_data(message_data):
             class_text = row[main_class_col] if len(row) > main_class_col else ''
             class_number = extract_class_number(class_text)
             
-            # Check if this phone has a practice update AND has a valid class number
-            if cleaned_sheet_phone in practice_lookup and class_number:
+            # Check if this phone has a newer practice update AND has a valid class number
+            if cleaned_sheet_phone in phones_with_newer_practice and class_number:
                 class_column = get_class_column_from_number(class_number)
                 if class_column:
                     # Convert column letter to index
@@ -211,6 +277,8 @@ def update_sheets_data(message_data):
                     
                     print(f"  ✅ Row {i}: Incrementing class {class_number} counter from {current_class_counter} to {new_class_counter} (Column {class_column})")
                     class_counters_updated += 1
+            elif cleaned_sheet_phone in practice_lookup and class_number:
+                print(f"  ⏭️ Row {i}: Skipping class {class_number} counter - practice date is not newer")
 
     # Execute all updates in batches
     if updates:
